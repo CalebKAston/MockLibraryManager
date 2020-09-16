@@ -3,6 +3,76 @@ import styles from '../styles/Home.module.css';
 import styled from 'styled-components';
 import { useEffect, useState } from 'react';
 import { Book } from '../data/books';
+import AddBookForm from '../components/add-book-form';
+import Modal from '../components/modal';
+
+export default function Home() {
+  const [bookList, setBookList] = useState<Book[]>([]);
+  const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    fetch(`http://localhost:3000/api/books`)
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject(response)
+      )
+      .then((books) => setBookList(books))
+      .catch(console.error);
+  }, []);
+
+  const createBook = ({ title, pages }) => {
+    fetch(`http://localhost:3000/api/book`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title,
+        pages,
+      }),
+    })
+      .then((response) =>
+        response.ok ? response.json() : Promise.reject(response)
+      )
+      .then((successResponse) => {
+        setShowModal(false);
+        fetch(`http://localhost:3000/api/books`)
+          .then((response) =>
+            response.ok ? response.json() : Promise.reject(response)
+          )
+          .then((books) => setBookList(books))
+          .catch(console.error);
+      });
+  };
+
+  return (
+    <AppWrapper>
+      <Head>
+        <title>Mock Library Manager</title>
+        <link rel='icon' href='/favicon.ico' />
+      </Head>
+
+      <Main>
+        <Title>Mock Library Manager</Title>
+        <Description>
+          Start managing your library by selecting a book from the list below.
+        </Description>
+        <LibraryList>
+          {bookList.map((book) => (
+            <LibraryListItem href={`/books/${book.id}`} key={book.id}>
+              {book.title}
+            </LibraryListItem>
+          ))}
+        </LibraryList>
+        <AddButton onClick={() => setShowModal(true)}>Add Book</AddButton>
+      </Main>
+
+      <Footer>Code Example built by Caleb Aston for DigiCert</Footer>
+
+      {showModal && (
+        <Modal onDismiss={() => setShowModal(false)}>
+          <AddBookForm onSubmit={createBook} />
+        </Modal>
+      )}
+    </AppWrapper>
+  );
+}
 
 const AppWrapper = styled.div`
   min-height: 100vh;
@@ -76,81 +146,3 @@ const AddButton = styled.button`
   border: 1px solid darkgreen;
   border-radius: 4px;
 `;
-
-const ModalContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 3rem;
-`;
-
-const ModalOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 10;
-`;
-
-const ModalContent = styled.div`
-  width: 40%;
-  background: white;
-  z-index: 11;
-  min-height: 300px;
-  border-radius: 4px;
-  padding: 1rem;
-`;
-
-export default function Home() {
-  const [bookList, setBookList] = useState<Book[]>([]);
-  const [showModal, setShowModal] = useState(false);
-
-  useEffect(() => {
-    fetch(`http://localhost:3000/api/books`)
-      .then((response) =>
-        response.ok ? response.json() : Promise.reject(response)
-      )
-      .then((books) => setBookList(books))
-      .catch(console.error);
-  }, []);
-
-  return (
-    <AppWrapper>
-      <Head>
-        <title>Mock Library Manager</title>
-        <link rel='icon' href='/favicon.ico' />
-      </Head>
-
-      <Main>
-        <Title>Mock Library Manager</Title>
-        <Description>
-          Start managing your library by selecting a book from the list below.
-        </Description>
-        <LibraryList>
-          {bookList.map((book) => (
-            <LibraryListItem href={`/books/${book.id}`} key={book.id}>
-              {book.title}
-            </LibraryListItem>
-          ))}
-        </LibraryList>
-        <AddButton onClick={() => setShowModal(true)}>Add Book</AddButton>
-      </Main>
-
-      <Footer>Code Example built by Caleb Aston for DigiCert</Footer>
-
-      {showModal && (
-        <ModalContainer>
-          <ModalOverlay onClick={() => setShowModal(false)} />
-          <ModalContent>This is the Modal</ModalContent>
-        </ModalContainer>
-      )}
-    </AppWrapper>
-  );
-}
